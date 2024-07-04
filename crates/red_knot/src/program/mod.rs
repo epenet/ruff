@@ -1,4 +1,4 @@
-use std::panic::{RefUnwindSafe, UnwindSafe};
+use std::panic::{AssertUnwindSafe, RefUnwindSafe};
 use std::sync::Arc;
 
 use salsa::{Cancelled, Database};
@@ -52,14 +52,18 @@ impl Program {
         &mut self.workspace
     }
 
-    #[allow(clippy::unnecessary_wraps)]
     fn with_db<F, T>(&self, f: F) -> Result<T, Cancelled>
     where
-        F: FnOnce(&Program) -> T + UnwindSafe,
+        F: FnOnce(&Program) -> T + std::panic::UnwindSafe,
     {
-        // TODO: Catch in `Caancelled::catch`
-        //  See https://salsa.zulipchat.com/#narrow/stream/145099-general/topic/How.20to.20use.20.60Cancelled.3A.3Acatch.60
-        Ok(f(self))
+        // (UN?)SAFETY: I don't think this is a 100% safe, lol. But it's what everyone else does.
+        // The salsa storage is guaranteed to be unwind safe (or at least, has been designed to be unwind
+        // safe for Salsa-exceptions). But this is not strictly guaranteed for any user code in `Program`.
+        // For example, multi-threaded inside `Program` that calls a query could panic and unwind, before
+        // it can complete and transitions into a valid state.
+        // To me, this seems like a design flaw in salsa, see https://salsa.zulipchat.com/#narrow/stream/145099-general/topic/How.20to.20use.20.60Cancelled.3A.3Acatch.60
+        let db = &AssertUnwindSafe(self);
+        Cancelled::catch(|| f(db))
     }
 }
 
