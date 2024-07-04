@@ -84,6 +84,17 @@ pub struct ClientSettings {
     pub(crate) tracing: TracingSettings,
 }
 
+impl ClientSettings {
+    pub(crate) fn set_preview(&mut self, preview: bool) {
+        if let Some(lint) = self.lint.as_mut() {
+            lint.preview = Some(preview);
+        }
+        if let Some(format) = self.format.as_mut() {
+            format.preview = Some(preview);
+        }
+    }
+}
+
 /// Settings needed to initialize tracing. These will only be
 /// read from the global configuration.
 #[derive(Debug, Deserialize, Default)]
@@ -107,7 +118,7 @@ struct WorkspaceSettings {
     workspace: Url,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Default, Deserialize)]
 #[cfg_attr(test, derive(PartialEq, Eq))]
 #[serde(rename_all = "camelCase")]
 struct LintOptions {
@@ -177,6 +188,16 @@ impl AllSettings {
                 })
                 .unwrap_or_default(),
         )
+    }
+
+    /// Set the preview flag for both the global and all workspace settings.
+    pub(crate) fn set_preview(&mut self, preview: bool) {
+        self.global_settings.set_preview(preview);
+        if let Some(workspace_settings) = self.workspace_settings.as_mut() {
+            for settings in workspace_settings.values_mut() {
+                settings.set_preview(preview);
+            }
+        }
     }
 
     fn from_init_options(options: InitializationOptions) -> Self {
