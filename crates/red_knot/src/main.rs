@@ -15,8 +15,8 @@ use red_knot::Workspace;
 use red_knot_module_resolver::{
     set_module_resolution_settings, RawModuleResolutionSettings, TargetVersion,
 };
-use ruff_db::file_system::{FileSystem, FileSystemPath, OsFileSystem};
-use ruff_db::vfs::system_path_to_file;
+use ruff_db::files::system_path_to_file;
+use ruff_db::system::{OsSystem, System, SystemPath};
 
 #[allow(
     clippy::print_stdout,
@@ -35,8 +35,8 @@ pub fn main() -> anyhow::Result<()> {
         return Err(anyhow::anyhow!("Invalid arguments"));
     }
 
-    let fs = OsFileSystem;
-    let entry_point = FileSystemPath::new(&arguments[1]);
+    let fs = OsSystem;
+    let entry_point = SystemPath::new(&arguments[1]);
 
     if !fs.exists(entry_point) {
         eprintln!("The entry point does not exist.");
