@@ -35,7 +35,9 @@ pub fn main() -> anyhow::Result<()> {
         return Err(anyhow::anyhow!("Invalid arguments"));
     }
 
-    let fs = OsSystem;
+    let cwd = std::env::current_dir().unwrap();
+    let cwd = SystemPath::from_std_path(&cwd).unwrap();
+    let fs = OsSystem::new(cwd);
     let entry_point = SystemPath::new(&arguments[1]);
 
     if !fs.exists(entry_point) {
